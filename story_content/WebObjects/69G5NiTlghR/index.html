@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Blue Signal Quiz sign-in</title>
+<script>
+/* ============ SETTINGS: EDIT THESE, THEN SAVE ============ */
+var PASSWORD            = "KCS1234";
+var REQUIRE_STATION_KEY = true;   /* false ONLY while testing in Review 360 */
+var STATION_KEY         = "1234";
+var CRAFTS = [
+  "Foreman",
+"Car Inspector",
+"Electrician",
+"Coach Cleaner",
+"Sheet Metal Worker",
+"Machinist",
+"Laborer",
+"Boiler Maker"
+];
+var INSTRUCTORS = [
+  "Daniel Saulnier",
+  "Eric Oslon",
+  "Kevin Connors",
+  "Peter Royal",
+  "Richard Castelo",
+  "Matthew Fitzmaurice"
+];
+/* ================== END OF SETTINGS ================== */
+</script>
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body { font-family: "Segoe UI", Arial, sans-serif; font-size: 20px; color: #1f2a33; background: #fff; }
+  .screen { display: none; max-width: 900px; padding: 24px 36px; }
+  .screen.active { display: block; }
+  h1 { font-size: 30px; margin: 0 0 18px; }
+    p { margin: 0 0 12px; line-height: 1.4; }
+  .row { display: flex; gap: 24px; }
+  .row > div { flex: 1; }
+  label { display: block; font-weight: 600; margin: 14px 0 6px; }
+  input, select { width: 100%; height: 58px; font: inherit; font-size: 22px; padding: 0 14px;
+    border: 2px solid #8a96a3; border-radius: 8px; background: #fff; color: #1f2a33; }
+  input:focus, select:focus { outline: 3px solid #00a3ad; outline-offset: 1px; border-color: #00a3ad; }
+  .missing { border-color: #b42318; background: #fff5f4; }
+  button { height: 62px; min-width: 220px; margin: 24px 16px 0 0; padding: 0 30px; font: inherit; font-size: 22px;
+    font-weight: 600; border: 0; border-radius: 8px; background: #00808a; color: #fff; cursor: pointer; }
+  button.secondary { background: #e3e8ec; color: #1f2a33; }
+  button:disabled { background: #9fb3b6; cursor: default; }
+  .error { color: #b42318; font-weight: 600; min-height: 30px; margin-top: 14px; }
+  table { border-collapse: collapse; font-size: 24px; margin: 6px 0 4px; }
+  td { padding: 8px 28px 8px 0; vertical-align: top; }
+  td:first-child { color: #52606d; }
+  td:last-child { font-weight: 600; }
+</style>
+</head>
+<body>
+
+<div id="blocked" class="screen">
+  <h1>Open the quiz from the training computer shortcut</h1>
+  <p>This quiz only opens from the Blue Signal Quiz shortcut on a Keolis training computer. Ask your instructor for help.</p>
+</div>
+
+<div id="pw" class="screen">
+  <h1>Blue Signal Refresher Quiz</h1>
+  <label for="pwInput">Quiz password</label>
+  <input id="pwInput" type="password" autocomplete="off">
+  <button id="pwBtn" type="button">Continue</button>
+  <div id="pwError" class="error" role="alert"></div>
+</div>
+
+<div id="info" class="screen">
+  <h1>Your information</h1>
+  <div class="row">
+    <div><label for="first">First name</label><input id="first" type="text" autocomplete="off" spellcheck="false"></div>
+    <div><label for="last">Last name</label><input id="last" type="text" autocomplete="off" spellcheck="false"></div>
+  </div>
+  <div class="row">
+    <div><label for="craft">Craft</label><select id="craft"><option value="" selected disabled>Tap to choose</option></select></div>
+    <div><label for="empId">I.D.#</label><input id="empId" type="text" autocomplete="off" spellcheck="false"></div>
+  </div>
+  <label for="instructor">Instructor</label>
+  <select id="instructor"><option value="" selected disabled>Tap to choose</option></select>
+  <button id="reviewBtn" type="button">Continue</button>
+  <div id="infoError" class="error" role="alert"></div>
+</div>
+
+<div id="confirm" class="screen">
+  <h1>Is this correct?</h1>
+  <table>
+    <tr><td>Name</td><td id="cName"></td></tr>
+    <tr><td>Craft</td><td id="cCraft"></td></tr>
+    <tr><td>I.D.#</td><td id="cId"></td></tr>
+    <tr><td>Instructor</td><td id="cInstr"></td></tr>
+  </table>
+  <button id="startBtn" type="button">Start the test</button>
+  <button id="editBtn" type="button" class="secondary">Fix my information</button>
+  <div id="confirmError" class="error" role="alert"></div>
+</div>
+
+<script>
+(function () {
+  function el(id) { return document.getElementById(id); }
+  function show(id) {
+    ["blocked", "pw", "info", "confirm"].forEach(function (s) { el(s).classList.toggle("active", s === id); });
+  }
+  function getPlayer() {
+    try {
+      if (window.parent !== window && typeof window.parent.GetPlayer === "function") { return window.parent.GetPlayer(); }
+    } catch (e) {}
+    return null;
+  }
+  function linkParams() {
+    var sources = [
+      function () { return window.parent.location.search; },
+      function () { return window.top.location.search; },
+      function () { return window.location.search; }
+    ];
+    for (var i = 0; i < sources.length; i++) {
+      try { var s = sources[i](); if (s && s.length > 1) { return new URLSearchParams(s); } } catch (e) {}
+    }
+    return new URLSearchParams("");
+  }
+  function addOptions(select, items) {
+    items.forEach(function (text) {
+      var o = document.createElement("option"); o.value = text; o.textContent = text; select.appendChild(o);
+    });
+  }
+  function makeAttemptId() {
+    var d = new Date(), chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789", r = new Uint32Array(6), s = "";
+    function pad(n) { return (n < 10 ? "0" : "") + n; }
+    window.crypto.getRandomValues(r);
+    for (var i = 0; i < r.length; i++) { s += chars.charAt(r[i] % chars.length); }
+    return "BSQ-" + d.getFullYear() + pad(d.getMonth() + 1) + pad(d.getDate()) + "-" + s;
+  }
+
+  var fields = [
+    { id: "first",      variable: "FirstName",  label: "First name" },
+    { id: "last",       variable: "LastName",   label: "Last name" },
+    { id: "craft",      variable: "Craft",      label: "Craft" },
+    { id: "empId",      variable: "EmployeeID", label: "I.D.#" },
+    { id: "instructor", variable: "Instructor", label: "Instructor" }
+  ];
+  function readValues() {
+    var v = {};
+    fields.forEach(function (f) { v[f.variable] = (el(f.id).value || "").replace(/\s+/g, " ").trim(); });
+    return v;
+  }
+
+  addOptions(el("craft"), CRAFTS);
+  addOptions(el("instructor"), INSTRUCTORS);
+
+  var params = linkParams();
+  var station = (params.get("station") || "").replace(/[^A-Za-z0-9_-]/g, "").slice(0, 20);
+  if (REQUIRE_STATION_KEY && (!station || params.get("key") !== STATION_KEY)) { show("blocked"); return; }
+  if (!station) { station = "TEST"; }
+  show("pw");
+
+  function checkPassword() {
+    if (el("pwInput").value.trim() === String(PASSWORD).trim()) {
+      el("pwError").textContent = "";
+      show("info");
+    } else {
+      el("pwError").textContent = "That password isn't right. Ask your instructor for the quiz password.";
+      el("pwInput").value = "";
+      el("pwInput").focus();
+    }
+  }
+  el("pwBtn").addEventListener("click", checkPassword);
+  el("pwInput").addEventListener("keydown", function (e) { if (e.key === "Enter") { checkPassword(); } });
+
+  fields.forEach(function (f) {
+    ["input", "change"].forEach(function (evt) {
+      el(f.id).addEventListener(evt, function () { if (el(f.id).value.trim()) { el(f.id).classList.remove("missing"); } });
+    });
+  });
+
+  el("reviewBtn").addEventListener("click", function () {
+    var v = readValues(), missing = [];
+    fields.forEach(function (f) {
+      var empty = !v[f.variable];
+      el(f.id).classList.toggle("missing", empty);
+      if (empty) { missing.push(f.label); }
+    });
+    if (missing.length) { el("infoError").textContent = "Fill in: " + missing.join(", "); return; }
+    el("infoError").textContent = "";
+    el("cName").textContent = v.FirstName + " " + v.LastName;
+    el("cCraft").textContent = v.Craft;
+    el("cId").textContent = v.EmployeeID;
+    el("cInstr").textContent = v.Instructor;
+    el("confirmError").textContent = "";
+    show("confirm");
+  });
+
+  el("editBtn").addEventListener("click", function () { show("info"); });
+
+  el("startBtn").addEventListener("click", function () {
+    var player = getPlayer();
+    if (!player) {
+      el("confirmError").textContent = "This form can't connect to the quiz. Tell your instructor.";
+      return;
+    }
+    var v = readValues();
+    el("startBtn").disabled = true;
+    try {
+      fields.forEach(function (f) { player.SetVar(f.variable, v[f.variable]); });
+      player.SetVar("StationID", station);
+      player.SetVar("AttemptID", makeAttemptId());
+      player.SetVar("InfoComplete", true); /* must be last: Storyline jumps to Question 1 when this changes */
+    } catch (e) {
+      el("startBtn").disabled = false;
+      el("confirmError").textContent = "Your information didn't save. Tell your instructor.";
+    }
+  });
+})();
+</script>
+</body>
+</html>

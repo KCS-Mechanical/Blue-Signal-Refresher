@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Submit</title>
+<script src="pdf-lib.min.js"></script>
+<script>
+/* ============ SETTINGS: EDIT THESE ============ */
+var FLOW_URL   = "PASTE-YOUR-HTTP-URL-HERE";
+var SHARED_KEY = "CHANGE-ME-THREE";
+var ASSESSMENT = "Blue Signal Refresher";
+/* ================ END SETTINGS ================ */
+</script>
+<style>
+  *{box-sizing:border-box}html,body{margin:0}
+  body{font-family:"Segoe UI",Arial,sans-serif;font-size:19px;color:#1f2a33;background:#fff}
+  #box{padding:14px 20px}
+  button{height:60px;min-width:240px;padding:0 28px;font:inherit;font-size:21px;font-weight:600;
+    border:0;border-radius:8px;background:#00808a;color:#fff;cursor:pointer}
+  button:disabled{background:#9fb3b6;cursor:default}
+  #msg{margin-top:14px;font-size:18px;min-height:52px;line-height:1.35}
+  .err{color:#b42318;font-weight:600}
+  .ok{color:#16704f;font-weight:600}
+</style>
+</head>
+<body>
+<div id="box">
+  <button id="btn" type="button" style="display:none">Submit my test</button>
+  <div id="msg"></div>
+</div>
+<script>
+(function(){
+var KEY=['c','b','a','d','d','c','c','b','T','d','c','d','c','F','T','a','b','F','c','T'];
+var POS=[
+ {p:0,qy:587.1,lx:117,o:{a:{y:570.0},b:{y:553.3},c:{y:536.4},d:{y:519.5}}},
+ {p:0,qy:486.2,lx:117,o:{a:{y:469.0},b:{y:452.4},c:{y:435.4},d:{y:418.6}}},
+ {p:0,qy:385.3,lx:117,o:{a:{y:368.1},b:{y:351.4},c:{y:334.6},d:{y:317.7}}},
+ {p:0,qy:284.2,lx:117,o:{a:{y:267.2},b:{y:250.4},c:{y:233.6},d:{y:216.8}}},
+ {p:1,qy:701.7,lx:111.3,o:{a:{y:684.7},b:{y:667.8},c:{y:651.0},d:{y:634.1}}},
+ {p:1,qy:600.7,lx:111.3,o:{a:{y:583.8},b:{y:566.9},c:{y:550.1},d:{y:533.2}}},
+ {p:1,qy:499.8,lx:111.3,o:{a:{y:465.8},b:{y:449.0},c:{y:432.2},d:{y:398.1}}},
+ {p:1,qy:367.4,lx:111.3,o:{a:{y:316.6},b:{y:299.8},c:{y:283.1},d:{y:266.2}}},
+ {p:1,qy:232.7,lx:111.3,tf:1,o:{T:{y:198.4,x:105,w:19},F:{y:198.4,x:141,w:22}}},
+ {p:1,qy:167.7,lx:111.3,o:{a:{y:150.6},b:{y:133.8},c:{y:117.0},d:{y:100.2}}},
+ {p:2,qy:684.6,lx:117,o:{a:{y:667.4},b:{y:650.7},c:{y:633.8}}},
+ {p:2,qy:600.9,lx:117,o:{a:{y:583.9},b:{y:567.0},c:{y:550.2},d:{y:533.2}}},
+ {p:2,qy:480.4,lx:117,o:{a:{y:463.6},b:{y:446.8},c:{y:430.1},d:{y:413.4}}},
+ {p:2,qy:379.9,lx:117,tf:1,o:{T:{y:362.7,x:108,w:19},F:{y:345.8,x:108,w:22}}},
+ {p:2,qy:309.9,lx:117,tf:1,o:{T:{y:292.9,x:108,w:19},F:{y:276.0,x:109.5,w:22}}},
+ {p:2,qy:242.3,lx:117,o:{a:{y:225.3},b:{y:208.5},c:{y:191.7},d:{y:174.9}}},
+ {p:2,qy:141.5,lx:117,o:{a:{y:107.3},b:{y:90.7},c:{y:73.9},d:{y:57.1}}},
+ {p:3,qy:684.6,lx:117,tf:1,o:{T:{y:667.5,x:108,w:19},F:{y:648.5,x:108,w:22}}},
+ {p:3,qy:614.9,lx:117,o:{a:{y:563.9},b:{y:547.3},c:{y:530.5},d:{y:513.5}}},
+ {p:3,qy:480.1,lx:117,tf:1,o:{T:{y:436.3,x:108,w:19},F:{y:411.7,x:108,w:22}}}
+];
+var btn=document.getElementById("btn"),msg=document.getElementById("msg");
+function say(t,c){msg.textContent=t;msg.className=c||"";}
+function P(){try{if(window.parent!==window&&typeof window.parent.GetPlayer==="function")return window.parent.GetPlayer();}catch(e){}return null;}
+function V(p,n){try{var v=p.GetVar(n);return v===undefined||v===null?"":v;}catch(e){return "";}}
+function pad(n){return(n<10?"0":"")+n;}
+function today(){var d=new Date();return pad(d.getMonth()+1)+"-"+pad(d.getDate())+"-"+d.getFullYear();}
+function clean(s){return String(s).replace(/[^\x20-\x7E]/g,"").trim();}
+
+function gather(p){
+  var d={first:[],ok:[],fixed:[]};
+  for(var i=1;i<=20;i++){var n=(i<10?"0"+i:""+i);
+    d.first.push(String(V(p,"Q"+n+"_First")));
+    d.ok.push(V(p,"Q"+n+"_OK")===true||V(p,"Q"+n+"_OK")==="true");
+    d.fixed.push(V(p,"Q"+n+"_Fixed")===true||V(p,"Q"+n+"_Fixed")==="true");}
+  return d;
+}
+
+async function build(p,d,isFinal){
+  var PL=PDFLib,bytes=await fetch("template.pdf").then(r=>r.arrayBuffer());
+  var doc=await PL.PDFDocument.load(bytes);
+  var F=await doc.embedFont(PL.StandardFonts.Helvetica);
+  var FB=await doc.embedFont(PL.StandardFonts.HelveticaBold);
+  var pg=doc.getPages(),blk=PL.rgb(0,0,0);
+  function txt(i,x,y,s,size,f){pg[i].drawText(s,{x:x,y:y,size:size,font:f||F,color:blk});}
+  function rt(i,xEnd,y,s,size){txt(i,xEnd-F.widthOfTextAtSize(s,size),y,s,size);}
+  function ring(i,cx,cy,r){pg[i].drawEllipse({x:cx,y:cy,xScale:r,yScale:r,borderColor:blk,borderWidth:1.1});}
+  function slash(i,cx,cy,r){pg[i].drawLine({start:{x:cx-r,y:cy-r},end:{x:cx+r,y:cy+r},thickness:1.1,color:blk});}
+
+  var name=clean(V(p,"FirstName")+" "+V(p,"LastName"));
+  txt(0,118,661.5,name,10);
+  txt(0,373,661.5,clean(V(p,"TestDate")||today()),10);
+  txt(0,118,634.8,clean(V(p,"Craft")),10);
+  txt(0,438,634.8,clean(V(p,"EmployeeID")),9);
+  txt(0,85,612,"Instructor: "+clean(V(p,"Instructor"))+"    Station: "+clean(V(p,"StationID"))+"    ID: "+clean(V(p,"AttemptID")),7);
+
+  for(var i=0;i<20;i++){
+    var q=POS[i],pi=q.p,pick=d.first[i],ok=d.ok[i],fx=d.fixed[i]&&isFinal;
+    var op=q.o[pick];
+    if(op){
+      var x=op.x!==undefined?op.x:q.lx, w=op.w!==undefined?op.w:7;
+      var cx=x+w/2, cy=op.y+(q.tf?4:3), r=q.tf?w/2+4:7;
+      ring(pi,cx,cy,r);
+      if(!ok){slash(pi,cx,cy,r);}
+      rt(pi,x-5,op.y,ok?"Answer->":"1st try->",6.5);
+    }
+    if(ok){txt(pi,25,q.qy,"CORRECT",8,FB);}
+    else{
+      txt(pi,25,q.qy,"INCORRECT",8,FB);
+      if(fx){
+        txt(pi,25,q.qy+10,"CORRECTED",8,FB);
+        var k=q.o[KEY[i]];
+        if(k){var kx=k.x!==undefined?k.x:q.lx,kw=k.w!==undefined?k.w:7;
+          ring(pi,kx+kw/2,k.y+(q.tf?4:3),q.tf?kw/2+4:7);
+          rt(pi,kx-5,k.y,"Corrected->",6.5);}
+      }
+    }
+  }
+
+  var fs=Number(V(p,"FirstScore"))||0;
+  txt(3,196,226.4,String(fs),11);
+  if(isFinal){
+    var rs=0;for(var j=0;j<20;j++){if(d.ok[j]||d.fixed[j])rs+=5;}
+    txt(3,196,197.1,String(rs),11);
+    var sig=String(V(p,"SigData"));
+    if(sig.indexOf("data:image/png")===0){
+      var img=await doc.embedPng(sig);
+      pg[3].drawImage(img,{x:88,y:143,width:150,height:44});
+    }
+    txt(3,85,128,"Signed at: "+new Date().toLocaleString(),6);
+  }
+  return {b64:await doc.saveAsBase64(),reviewScore:isFinal?(function(){var t=0;for(var j=0;j<20;j++){if(d.ok[j]||d.fixed[j])t+=5;}return t;})():null};
+}
+
+async function post(body){
+  try{
+    var r=await fetch(FLOW_URL,{method:"POST",headers:{"Content-Type":"text/plain"},body:body});
+    if(r.status>=200&&r.status<300)return true;
+    throw new Error("HTTP "+r.status);
+  }catch(e){
+    try{await fetch(FLOW_URL,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain"},body:body});return "unconfirmed";}
+    catch(e2){return false;}
+  }
+}
+
+async function send(p,mode){
+  var d=gather(p);
+  if(!V(p,"TestDate")){try{p.SetVar("TestDate",today());}catch(e){}}
+  say("Building your test document...");
+  var out=await build(p,d,mode==="final");
+  var base=clean(V(p,"LastName"))+"_"+clean(V(p,"FirstName"))+"_"+clean(V(p,"EmployeeID"));
+  var miss=[];for(var i=0;i<20;i++){if(!d.ok[i])miss.push(i+1);}
+  var body=JSON.stringify({
+    assessment:ASSESSMENT,sendType:mode,sharedKey:SHARED_KEY,
+    attemptId:clean(V(p,"AttemptID")),firstName:clean(V(p,"FirstName")),lastName:clean(V(p,"LastName")),
+    testDate:clean(V(p,"TestDate")||today()),craft:clean(V(p,"Craft")),employeeId:clean(V(p,"EmployeeID")),
+    instructor:clean(V(p,"Instructor")),stationId:clean(V(p,"StationID")),
+    firstScore:Number(V(p,"FirstScore"))||0,reviewScore:out.reviewScore,
+    missedQuestions:miss.join(", "),firstAnswers:d.first.join(","),
+    fileNameBase:base.replace(/[^A-Za-z0-9_-]/g,""),deviceTime:new Date().toISOString(),
+    pdfBase64:out.b64
+  });
+  say("Sending...");
+  var r=await post(body);
+  if(r===false){return false;}
+  return true;
+}
+
+function ready(cb){var t=0;(function w(){var p=P();if(p){cb(p);return;}if(++t>60){say("This page can't connect to the quiz. Tell your instructor.","err");return;}setTimeout(w,250);})();}
+
+ready(function(p){
+  var mode=String(V(p,"SendMode"));
+  if(mode==="initial"){
+    say("Saving your test...");
+    send(p,"initial").then(function(okd){
+      if(okd){try{p.SetVar("InitialSent",true);}catch(e){}say("Saved. Wait for your instructor.","ok");}
+      else{say("Could not send. Tell your instructor.","err");btn.textContent="Try again";btn.style.display="";
+        btn.onclick=function(){btn.disabled=true;send(p,"initial").then(function(o){btn.disabled=false;
+          if(o){try{p.SetVar("InitialSent",true);}catch(e){}say("Saved. Wait for your instructor.","ok");btn.style.display="none";}
+          else say("Still could not send. Tell your instructor.","err");});};}
+    });
+    return;
+  }
+  if(mode!=="final"){return;}
+  if(Number(V(p,"FirstScore"))===100){try{p.SetVar("FinalSent",true);}catch(e){}return;}
+  btn.style.display="";btn.disabled=true;
+  say("Sign above, then tap Submit.");
+  setInterval(function(){
+    var s=V(p,"SigReady");btn.disabled=!(s===true||s==="true");
+  },400);
+  btn.onclick=function(){
+    var d=gather(p),bad=[];
+    for(var i=0;i<20;i++){if(!d.ok[i]&&!d.fixed[i])bad.push(i+1);}
+    if(bad.length){say("These questions still need correcting: "+bad.join(", "),"err");return;}
+    btn.disabled=true;
+    send(p,"final").then(function(okd){
+      if(okd){try{p.SetVar("FinalSent",true);}catch(e){}say("Sent. You may close this window.","ok");btn.style.display="none";}
+      else{btn.disabled=false;say("Could not send. Tap Submit to try again.","err");}
+    });
+  };
+});
+})();
+</script>
+</body>
+</html>
