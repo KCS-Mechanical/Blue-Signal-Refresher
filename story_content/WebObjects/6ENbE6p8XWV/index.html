@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Signature</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body { font-family: "Segoe UI", Arial, sans-serif; background: #fff; color: #1f2a33; }
+  #wrap { padding: 8px; }
+  #padBox { position: relative; border: 2px solid #8a96a3; border-radius: 8px; background: #fff; }
+  canvas { display: block; width: 100%; height: 220px; touch-action: none; border-radius: 6px; }
+  #baseline { position: absolute; left: 6%; right: 6%; bottom: 46px; border-bottom: 1px solid #c3ccd4; }
+  #hint { position: absolute; left: 6%; bottom: 22px; color: #8a96a3; font-size: 15px; }
+  #bar { display: flex; align-items: center; gap: 16px; margin-top: 10px; }
+  button { height: 52px; min-width: 150px; padding: 0 24px; font: inherit; font-size: 19px; font-weight: 600;
+    border: 0; border-radius: 8px; background: #e3e8ec; color: #1f2a33; cursor: pointer; }
+  #status { font-size: 17px; color: #52606d; }
+</style>
+</head>
+<body>
+<div id="wrap">
+  <div id="padBox">
+    <canvas id="pad"></canvas>
+    <div id="baseline"></div>
+    <div id="hint">Sign above the line</div>
+  </div>
+  <div id="bar">
+    <button id="clearBtn" type="button">Clear</button>
+    <span id="status">Not signed yet</span>
+  </div>
+</div>
+
+<script>
+(function () {
+  var canvas = document.getElementById("pad");
+  var ctx = canvas.getContext("2d");
+  var drawing = false, hasInk = false, last = null;
+
+  function getPlayer() {
+    try {
+      if (window.parent !== window && typeof window.parent.GetPlayer === "function") {
+        return window.parent.GetPlayer();
+      }
+    } catch (e) {}
+    return null;
+  }
+
+  function sizeCanvas() {
+    var saved = hasInk ? canvas.toDataURL("image/png") : null;
+    var ratio = window.devicePixelRatio || 1;
+    var w = canvas.clientWidth, h = canvas.clientHeight;
+    canvas.width = Math.round(w * ratio);
+    canvas.height = Math.round(h * ratio);
+    ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+    ctx.lineWidth = 2.5;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.strokeStyle = "#111827";
+    if (saved) {
+      var img = new Image();
+      img.onload = function () { ctx.drawImage(img, 0, 0, w, h); };
+      img.src = saved;
+    }
+  }
+
+  function point(e) {
+    var r = canvas.getBoundingClientRect();
+    return { x: e.clientX - r.left, y: e.clientY - r.top };
+  }
+
+  function start(e) {
+    e.preventDefault();
+    drawing = true;
+    last = point(e);
+    canvas.setPointerCapture && canvas.setPointerCapture(e.pointerId);
+  }
+
+  function move(e) {
+    if (!drawing) { return; }
+    e.preventDefault();
+    var p = point(e);
+    ctx.beginPath();
+    ctx.moveTo(last.x, last.y);
+    ctx.lineTo(p.x, p.y);
+    ctx.stroke();
+    last = p;
+    if (!hasInk) { hasInk = true; publish(); }
+  }
+
+  function end(e) {
+    if (!drawing) { return; }
+    drawing = false;
+    publish();
+  }
+
+  function publish() {
+    var p = getPlayer();
+    document.getElementById("status").textContent = hasInk ? "Signed" : "Not signed yet";
+    if (!p) { return; }
+    try {
+      p.SetVar("SigData", hasInk ? canvas.toDataURL("image/png") : "");
+      p.SetVar("SigReady", hasInk);
+    } catch (e) {}
+  }
+
+  canvas.addEventListener("pointerdown", start);
+  canvas.addEventListener("pointermove", move);
+  canvas.addEventListener("pointerup", end);
+  canvas.addEventListener("pointercancel", end);
+  canvas.addEventListener("pointerleave", end);
+
+  document.getElementById("clearBtn").addEventListener("click", function () {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    hasInk = false;
+    publish();
+  });
+
+  window.addEventListener("resize", sizeCanvas);
+  sizeCanvas();
+  publish();
+})();
+</script>
+</body>
+</html>
