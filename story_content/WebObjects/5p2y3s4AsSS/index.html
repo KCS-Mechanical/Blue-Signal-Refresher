@@ -43,16 +43,16 @@ var POS=[
  {p:1,qy:367.4,lx:111.3,o:{a:{y:316.6},b:{y:299.8},c:{y:283.1},d:{y:266.2}}},
  {p:1,qy:232.7,lx:111.3,tf:1,o:{T:{y:198.4,x:105,w:19},F:{y:198.4,x:141,w:22}}},
  {p:1,qy:167.7,lx:111.3,o:{a:{y:150.6},b:{y:133.8},c:{y:117.0},d:{y:100.2}}},
- {p:2,qy:684.6,lx:117,o:{a:{y:667.4},b:{y:650.7},c:{y:633.8}}},
- {p:2,qy:600.9,lx:117,o:{a:{y:583.9},b:{y:567.0},c:{y:550.2},d:{y:533.2}}},
- {p:2,qy:480.4,lx:117,o:{a:{y:463.6},b:{y:446.8},c:{y:430.1},d:{y:413.4}}},
- {p:2,qy:379.9,lx:117,tf:1,o:{T:{y:362.7,x:108,w:19},F:{y:345.8,x:108,w:22}}},
- {p:2,qy:309.9,lx:117,tf:1,o:{T:{y:292.9,x:108,w:19},F:{y:276.0,x:109.5,w:22}}},
- {p:2,qy:242.3,lx:117,o:{a:{y:225.3},b:{y:208.5},c:{y:191.7},d:{y:174.9}}},
- {p:2,qy:141.5,lx:117,o:{a:{y:107.3},b:{y:90.7},c:{y:73.9},d:{y:57.1}}},
- {p:3,qy:684.6,lx:117,tf:1,o:{T:{y:667.5,x:108,w:19},F:{y:648.5,x:108,w:22}}},
- {p:3,qy:614.9,lx:117,o:{a:{y:563.9},b:{y:547.3},c:{y:530.5},d:{y:513.5}}},
- {p:3,qy:480.1,lx:117,tf:1,o:{T:{y:436.3,x:108,w:19},F:{y:411.7,x:108,w:22}}}
+ {p:2,qy:684.6,lx:117,o:{a:{y:667.4},b:{y:650.7},c:{y:633.8},d:{y:616.9}}},
+ {p:2,qy:584.0,lx:117,o:{a:{y:567.0},b:{y:550.1},c:{y:533.2},d:{y:516.3}}},
+ {p:2,qy:463.5,lx:117,o:{a:{y:446.7},b:{y:429.9},c:{y:413.2},d:{y:396.4}}},
+ {p:2,qy:362.9,lx:117,tf:1,o:{T:{y:345.8,x:108,w:19},F:{y:328.9,x:108,w:22}}},
+ {p:2,qy:293.0,lx:117,tf:1,o:{T:{y:275.9,x:108,w:19},F:{y:259.1,x:109.5,w:22}}},
+ {p:2,qy:225.4,lx:117,o:{a:{y:208.4},b:{y:191.7},c:{y:174.9},d:{y:158.1}}},
+ {p:3,qy:701.4,lx:117,o:{a:{y:667.2},b:{y:650.6},c:{y:633.8},d:{y:617.0}}},
+ {p:3,qy:583.5,lx:117,tf:1,o:{T:{y:566.4,x:108,w:19},F:{y:547.4,x:108,w:22}}},
+ {p:3,qy:513.8,lx:117,o:{a:{y:462.8},b:{y:446.2},c:{y:429.4},d:{y:412.5}}},
+ {p:3,qy:379.0,lx:117,tf:1,o:{T:{y:335.2,x:108,w:19},F:{y:310.5,x:108,w:22}}}
 ];
 var btn=document.getElementById("btn"),msg=document.getElementById("msg");
 function say(t,c){msg.textContent=t;msg.className=c||"";}
@@ -113,16 +113,16 @@ async function build(p,d,isFinal){
   }
 
   var fs=Number(V(p,"FirstScore"))||0;
-  txt(3,196,226.4,String(fs),11);
+  txt(3,196,212.8,String(fs),11);
   if(isFinal){
     var rs=0;for(var j=0;j<20;j++){if(d.ok[j]||d.fixed[j])rs+=5;}
-    txt(3,196,197.1,String(rs),11);
+    txt(3,196,183.5,String(rs),11);
     var sig=String(V(p,"SigData"));
     if(sig.indexOf("data:image/png")===0){
       var img=await doc.embedPng(sig);
-      pg[3].drawImage(img,{x:88,y:143,width:150,height:44});
+      pg[3].drawImage(img,{x:88,y:129,width:150,height:44});
     }
-    txt(3,85,128,"Signed at: "+new Date().toLocaleString(),6);
+    txt(3,85,114,"Signed at: "+new Date().toLocaleString(),6);
   }
   return {b64:await doc.saveAsBase64(),reviewScore:isFinal?(function(){var t=0;for(var j=0;j<20;j++){if(d.ok[j]||d.fixed[j])t+=5;}return t;})():null};
 }
